@@ -5,14 +5,7 @@
    // Included URL: "https://raw.githubusercontent.com/efabless/chipcraft---mest-course/main/tlv_lib/calculator_shell_lib.tlv"
    // Include Tiny Tapeout Lab.
    // Included URL: "https://raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/35e36bd144fddd75495d4cbc01c4fc50ac5bde6f/tlv_lib/tiny_tapeout_lib.tlv"// Included URL: "https://raw.githubusercontent.com/os-fpga/Virtual-FPGA-Lab/a069f1e4e19adc829b53237b3e0b5d6763dc3194/tlv_lib/fpga_includes.tlv"
-`line 213 "top.tlv" 1
-//_\SV
-
-
-   // Connect Tiny Tapeout outputs. Note that uio_ outputs are not available in the Tiny-Tapeout-3-based FPGA boards.
-   //*uo_out = 8'b0;
-   
-   
+`line 215 "top.tlv" 1
 
 //_\SV
 
@@ -24,11 +17,11 @@
 module top(input logic clk, input logic reset, input logic [31:0] cyc_cnt, output logic passed, output logic failed);
    // Tiny tapeout I/O signals.
    logic [7:0] ui_in, uo_out;
-   
+   logic [7:0]uio_in,  uio_out, uio_oe;
    logic [31:0] r;
    always @(posedge clk) r <= 0;
-   assign ui_in = r[7:0];
-   
+   assign ui_in = 8'b10000000;
+   assign uio_in = 8'b0;
    logic ena = 1'b0;
    logic rst_n = ! reset;
 
@@ -49,26 +42,26 @@ endmodule
 module tt_um_example (
     input  wire [7:0] ui_in,    // Dedicated inputs - connected to the input switches
     output wire [7:0] uo_out,   // Dedicated outputs - connected to the 7 segment display
-    /*   // The FPGA is based on TinyTapeout 3 which has no bidirectional I/Os (vs. TT6 for the ASIC).
+       // The FPGA is based on TinyTapeout 3 which has no bidirectional I/Os (vs. TT6 for the ASIC).
     input  wire [7:0] uio_in,   // IOs: Bidirectional Input path
     output wire [7:0] uio_out,  // IOs: Bidirectional Output path
     output wire [7:0] uio_oe,   // IOs: Bidirectional Enable path (active high: 0=input, 1=output)
-    */
+    
     input  wire       ena,      // will go high when the design is enabled
     input  wire       clk,      // clock
     input  wire       rst_n     // reset_n - low to reset
 );
     
     // Synchronize.
-    logic [9:0] inputs_ff, inputs_sync;
+    logic [17:0] inputs_ff, inputs_sync;
     always @(posedge clk) begin
-        inputs_ff <= {ui_in, ena, rst_n};
+        inputs_ff <= {ui_in, uio_in, ena, rst_n};
         inputs_sync <= inputs_ff;
     end
 
     // Debounce.
     `define DEBOUNCE_MAX_CNT 14'h3fff
-    logic [9:0] inputs_candidate, inputs_captured;
+    logic [17:0] inputs_candidate, inputs_captured;
     logic sync_rst_n = inputs_sync[0];
     logic [13:0] cnt;
     always @(posedge clk) begin
@@ -86,13 +79,13 @@ module tt_um_example (
            inputs_captured <= inputs_candidate;
         end
     end
-    logic [7:0] clean_ui_in;
+    logic [7:0] clean_ui_in, clean_uio_in;
     logic clean_ena, clean_rst_n;
-    assign {clean_ui_in, clean_ena, clean_rst_n} = inputs_captured;
+    assign {clean_ui_in, clean_uio_in, clean_ena, clean_rst_n} = inputs_captured;
 
     my_design my_design (
         .ui_in(clean_ui_in),
-        
+        .uio_in(clean_uio_in),
         .ena(clean_ena),
         .rst_n(clean_rst_n),
         .*);
@@ -108,11 +101,11 @@ endmodule
 module my_design (
     input  wire [7:0] ui_in,    // Dedicated inputs - connected to the input switches
     output wire [7:0] uo_out,   // Dedicated outputs - connected to the 7 segment display
-    /*   // The FPGA is based on TinyTapeout 3 which has no bidirectional I/Os (vs. TT6 for the ASIC).
+       // The FPGA is based on TinyTapeout 3 which has no bidirectional I/Os (vs. TT6 for the ASIC).
     input  wire [7:0] uio_in,   // IOs: Bidirectional Input path
     output wire [7:0] uio_out,  // IOs: Bidirectional Output path
     output wire [7:0] uio_oe,   // IOs: Bidirectional Enable path (active high: 0=input, 1=output)
-    */
+    
     input  wire       ena,      // will go high when the design is enabled
     input  wire       clk,      // clock
     input  wire       rst_n     // reset_n - low to reset
@@ -128,7 +121,7 @@ module my_design (
       assign L0_sseg_decimal_point_n_a0 = ~ uo_out[7];
       assign L0_sseg_digit_n_a0[7:0] = 8'b11111110;
    //_\end_source
-   `line 330 "top.tlv" 2
+   `line 325 "top.tlv" 2
 
    // Instantiate the Virtual FPGA Lab.
    `line 308 "/raw.githubusercontent.com/osfpga/VirtualFPGALab/a069f1e4e19adc829b53237b3e0b5d6763dc3194/tlvlib/fpgaincludes.tlv" 1
@@ -191,16 +184,16 @@ module my_design (
 
 
          //_/fpga
-            `line 140 "top.tlv" 1
+            `line 135 "top.tlv" 1
                //_|encrypt
                   //_@0
                      assign FpgaPins_Fpga_ENCRYPT_sbox_vec_a0[2047:0] = 2048'h637c777bf26b6fc5_3001672bfed7ab76_ca82c97dfa5947f0_add4a2af9ca472c0_b7fd9326363ff7cc3_4a5e5f171d8311504_c723c31896059a07_1280e2eb27b27509_832c1a1b6e5aa052_3bd6b329e32f8453d_100ed20fcb15b6ac_bbe394a4c58cfd0e_faafb434d338545f9_027f503c9fa851a34_08f929d38f5bcb6da2_110fff3d2cd0c13e_c5f974417c4a77e3_d645d197360814fd_c222a908846eeb814_de5e0bdbe0323a0a_4906245cc2d3ac629_195e479e7c8376d8d_d54ea96c56f4ea65_7aae08ba78252e1c_a6b4c6e8dd741f4b_bd8b8a703eb56648_03f60e613557b986_c11d9ee1f8981169_d98e949b1e87e9ce_5528df8ca1890dbfe_6426841992d0fb05_4bb16;
                      //
                      //
             
-                     assign FpgaPins_Fpga_ENCRYPT_ui_in_a0[7:0] = 8'b1000_0000;   //Input to determine mode/keys
+                     assign FpgaPins_Fpga_ENCRYPT_ui_in_a0[7:0] = ui_in;   //Input to determine mode/keys
                      assign FpgaPins_Fpga_ENCRYPT_ofb_a0 = FpgaPins_Fpga_ENCRYPT_ui_in_a0[7];             //Switch to determine mode
-                     assign FpgaPins_Fpga_ENCRYPT_blocks_to_run_a0[22:0] = 2;     //Blocks of AES to run if in OFB
+                     assign FpgaPins_Fpga_ENCRYPT_blocks_to_run_a0[22:0] = 2000000;     //Blocks of AES to run if in OFB
             
                      //Initial State or IV
                      assign FpgaPins_Fpga_ENCRYPT_test_state_a0[127:0] =  128'h00112233445566778899aabbccddeeff;
@@ -220,16 +213,18 @@ module my_design (
             
                      //Reset if *reset or if the ofb_count reaches 12 when in OFB
                      assign FpgaPins_Fpga_ENCRYPT_reset_a0 = reset;
+                     assign FpgaPins_Fpga_ENCRYPT_valid_check_a0 = FpgaPins_Fpga_ENCRYPT_valid_a0 && !FpgaPins_Fpga_ENCRYPT_ofb_a0;
+                     assign FpgaPins_Fpga_ENCRYPT_valid_a0 = FpgaPins_Fpga_ENCRYPT_r_counter_a0==11;
                      //_?$valid_blk
-                        assign FpgaPins_Fpga_ENCRYPT_valid_a0 = FpgaPins_Fpga_ENCRYPT_r_counter_a0==11;
+            
             
                         //If in ECB, this checks to see if the AES block if completed
-                        assign FpgaPins_Fpga_ENCRYPT_valid_check_a0 = FpgaPins_Fpga_ENCRYPT_valid_a0 && !FpgaPins_Fpga_ENCRYPT_ofb_a0;
             
-                        assign FpgaPins_Fpga_ENCRYPT_ld_key_a0 = ((!FpgaPins_Fpga_ENCRYPT_reset_a0 && FpgaPins_Fpga_ENCRYPT_reset_a1) || FpgaPins_Fpga_ENCRYPT_r_counter_a0 == 11) ? 1 : 0;
+            
+                        assign FpgaPins_Fpga_ENCRYPT_ld_key_a0 = ((!FpgaPins_Fpga_ENCRYPT_reset_a0 && FpgaPins_Fpga_ENCRYPT_reset_a1) || FpgaPins_Fpga_ENCRYPT_r_counter_a1 == 10) ? 1 : 0;
             
                         assign FpgaPins_Fpga_ENCRYPT_run_key_a0 = (!FpgaPins_Fpga_ENCRYPT_ld_key_a0 && FpgaPins_Fpga_ENCRYPT_ld_key_a1) ? 1 :
-                                   (FpgaPins_Fpga_ENCRYPT_run_key_a1 && FpgaPins_Fpga_ENCRYPT_ofb_a0 && FpgaPins_Fpga_ENCRYPT_reset_count_a1 <= FpgaPins_Fpga_ENCRYPT_blocks_to_run_a0 ) ? 1 :
+                                   (FpgaPins_Fpga_ENCRYPT_run_key_a1 && FpgaPins_Fpga_ENCRYPT_ofb_a0 && FpgaPins_Fpga_ENCRYPT_blk_counter_a1 <= FpgaPins_Fpga_ENCRYPT_blocks_to_run_a0 ) ? 1 :
                                    (!FpgaPins_Fpga_ENCRYPT_ofb_a0 && FpgaPins_Fpga_ENCRYPT_r_counter_a1 < 11) ? 1 :
                                    0;
             
@@ -242,7 +237,7 @@ module my_design (
                                           FpgaPins_Fpga_ENCRYPT_r_counter_a1;
             
                         //Perform the key schedule subroutine
-                        `line 111 "top.tlv" 1
+                        `line 106 "top.tlv" 1
                            //_/keyschedule
                         
                               //KEY is the exposed output to main. The current key to use will be displayed.
@@ -260,7 +255,7 @@ module my_design (
                                  assign FpgaPins_Fpga_ENCRYPT_Keyschedule_temp_a0[31:0] = FpgaPins_Fpga_ENCRYPT_Keyschedule_key_a0[31:0];                //w[i+3]
                                  assign FpgaPins_Fpga_ENCRYPT_Keyschedule_rot_a0[31:0] = {FpgaPins_Fpga_ENCRYPT_Keyschedule_temp_a0[23:0],FpgaPins_Fpga_ENCRYPT_Keyschedule_temp_a0[31:24]}; // rotate word
                         
-                                 `line 59 "top.tlv" 1
+                                 `line 54 "top.tlv" 1
                                     for (sbox_k = 0; sbox_k <= 3; sbox_k++) begin : L1_FpgaPins_Fpga_ENCRYPT_Keyschedule_SboxK logic [10:0] L1_sb_idx_a0; logic [7:0] L1_sb_intermed_a0; logic [7:0] L1_word_idx_a0; //_/sbox_k
                                  
                                        assign L1_sb_idx_a0[10:0] = 2040-8*L1_word_idx_a0;
@@ -268,7 +263,7 @@ module my_design (
                                        assign L1_sb_intermed_a0[7:0] = FpgaPins_Fpga_ENCRYPT_sbox_vec_a0[L1_sb_idx_a0 +: 8]; end
                                     assign FpgaPins_Fpga_ENCRYPT_Keyschedule_sb_out_a0[31:0] = {L1_FpgaPins_Fpga_ENCRYPT_Keyschedule_SboxK[0].L1_sb_intermed_a0, L1_FpgaPins_Fpga_ENCRYPT_Keyschedule_SboxK[1].L1_sb_intermed_a0, L1_FpgaPins_Fpga_ENCRYPT_Keyschedule_SboxK[2].L1_sb_intermed_a0, L1_FpgaPins_Fpga_ENCRYPT_Keyschedule_SboxK[3].L1_sb_intermed_a0};
                                  //_\end_source
-                                 `line 129 "top.tlv" 2
+                                 `line 124 "top.tlv" 2
                         
                                  assign FpgaPins_Fpga_ENCRYPT_Keyschedule_rcon_a0[7:0] = FpgaPins_Fpga_ENCRYPT_r_counter_a0 == 0 ? 8'h01 : //round constant
                                               FpgaPins_Fpga_ENCRYPT_Keyschedule_rcon_a1 <  8'h80 ? (2 * FpgaPins_Fpga_ENCRYPT_Keyschedule_rcon_a1) :
@@ -279,7 +274,7 @@ module my_design (
                                  assign FpgaPins_Fpga_ENCRYPT_Keyschedule_next_wordc_a0[31:0] = FpgaPins_Fpga_ENCRYPT_Keyschedule_next_wordb_a0 ^ FpgaPins_Fpga_ENCRYPT_Keyschedule_key_a0[63:32];
                                  assign FpgaPins_Fpga_ENCRYPT_Keyschedule_next_wordd_a0[31:0] = FpgaPins_Fpga_ENCRYPT_Keyschedule_next_wordc_a0 ^ FpgaPins_Fpga_ENCRYPT_Keyschedule_key_a0[31:0];
                         //_\end_source
-                        `line 191 "top.tlv" 2
+                        `line 188 "top.tlv" 2
             
                         //set the initial state
                         assign FpgaPins_Fpga_ENCRYPT_state_i_a0[127:0] = FpgaPins_Fpga_ENCRYPT_reset_a0 ? '0:
@@ -292,7 +287,7 @@ module my_design (
                            //_/subbytes
                               for (sub_word = 0; sub_word <= 3; sub_word++) begin : L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord logic [31:0] L1_sb_out_a0; logic [31:0] L1_word_a0; //_/sub_word
                                  assign L1_word_a0[31:0] = FpgaPins_Fpga_ENCRYPT_state_i_a0[128-(32*(sub_word+1))+:32];
-                                 `line 59 "top.tlv" 1
+                                 `line 54 "top.tlv" 1
                                     for (sbox_subword = 0; sbox_subword <= 3; sbox_subword++) begin : L2_SboxSubword logic [10:0] L2_sb_idx_a0; logic [7:0] L2_sb_intermed_a0; logic [7:0] L2_word_idx_a0; //_/sbox_subword
                                  
                                        assign L2_sb_idx_a0[10:0] = 2040-8*L2_word_idx_a0;
@@ -306,17 +301,12 @@ module my_design (
                                                  L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[1].L1_sb_out_a0[31:24], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[2].L1_sb_out_a0[23:16], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[3].L1_sb_out_a0[15:8], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[0].L1_sb_out_a0[7:0],
                                                  L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[2].L1_sb_out_a0[31:24], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[3].L1_sb_out_a0[23:16], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[0].L1_sb_out_a0[15:8], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[1].L1_sb_out_a0[7:0],
                                                  L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[3].L1_sb_out_a0[31:24], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[0].L1_sb_out_a0[23:16], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[1].L1_sb_out_a0[15:8], L1_FpgaPins_Fpga_ENCRYPT_Subbytes_SubWord[2].L1_sb_out_a0[7:0]};
-                              /*
-                              $ssr_out[127:0] = {/sbox[0]$sb_out, /sbox[5]$sb_out, /sbox[10]$sb_out, /sbox[15]$sb_out,
-                                                 /sbox[4]$sb_out, /sbox[9]$sb_out, /sbox[14]$sb_out, /sbox[3]$sb_out,
-                                                 /sbox[8]$sb_out, /sbox[13]$sb_out, /sbox[2]$sb_out, /sbox[7]$sb_out,
-                                                 /sbox[12]$sb_out, /sbox[1]$sb_out, /sbox[6]$sb_out, /sbox[11]$sb_out}; */
                         //_\end_source
-                        `line 200 "top.tlv" 2
+                        `line 197 "top.tlv" 2
                         assign FpgaPins_Fpga_ENCRYPT_state_ssr_a0[127:0] = FpgaPins_Fpga_ENCRYPT_r_counter_a0 ==0 ? FpgaPins_Fpga_ENCRYPT_state_i_a0 : FpgaPins_Fpga_ENCRYPT_Subbytes_ssr_out_a0;
             
                         //Perform the mixcolumn subroutine
-                        `line 85 "top.tlv" 1
+                        `line 80 "top.tlv" 1
                            //_/mixcolumn
                         
                               assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_const_matrix_a0[127:0] = 128'h02030101010203010101020303010102; //constant matrix for column multiplicaiton in the form of a vector
@@ -339,29 +329,34 @@ module my_design (
                                  assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_out_matrix_a0[xx][31:0] = L1_Yy_oo_a0; end //concat matrix rows
                               assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_block_out_a0[127:0] = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_out_matrix_a0; //concat matrix columns
                         //_\end_source
-                        `line 204 "top.tlv" 2
+                        `line 201 "top.tlv" 2
                         assign FpgaPins_Fpga_ENCRYPT_state_mc_a0[127:0] = (FpgaPins_Fpga_ENCRYPT_r_counter_a0 ==0 || FpgaPins_Fpga_ENCRYPT_r_counter_a0 == 10) ? FpgaPins_Fpga_ENCRYPT_state_ssr_a0 : FpgaPins_Fpga_ENCRYPT_Mixcolumn_block_out_a0;
             
                         //Perform the add round key subroutine
                         assign FpgaPins_Fpga_ENCRYPT_state_ark_a0[127:0] = FpgaPins_Fpga_ENCRYPT_state_mc_a0 ^ FpgaPins_Fpga_ENCRYPT_Keyschedule_key_a0;
             
                         //If in ECB, check for a correct encryption
-                        //_?$valid_check
-                           `line 69 "top.tlv" 1
-                           
-                              //_/check
-                           
-                                 assign FpgaPins_Fpga_ENCRYPT_Check_pass_a0[0:0] = FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 1 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'hb6768473ce9843ea66a81405dd50b345) :
-                                              FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 2 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'hcb2f430383f9084e03a653571e065de6) :
-                                              FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 4 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'hff4e66c07bae3e79fb7d210847a3b0ba) :
-                                              FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 8 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'h7b90785125505fad59b13c186dd66ce3) :
-                                              (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'h8b527a6aebdaec9eaef8eda2cb7783e5);
-                           
-                                 assign uo_out = FpgaPins_Fpga_ENCRYPT_Check_pass_a0 ? 8'b00111111 :
-                                           8'b01110110;
-                           //_\end_source
-                           `line 212 "top.tlv" 2
             
+                     //_?$valid_check
+                        `line 64 "top.tlv" 1
+                        
+                           //_/check
+                        
+                              assign FpgaPins_Fpga_ENCRYPT_Check_pass_a0[0:0] = FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 1 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'hb6768473ce9843ea66a81405dd50b345) :
+                                           FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 2 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'hcb2f430383f9084e03a653571e065de6) :
+                                           FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 4 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'hff4e66c07bae3e79fb7d210847a3b0ba) :
+                                           FpgaPins_Fpga_ENCRYPT_ui_in_a0 == 8 ? (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'h7b90785125505fad59b13c186dd66ce3) :
+                                           (FpgaPins_Fpga_ENCRYPT_state_i_a0 == 128'h8b527a6aebdaec9eaef8eda2cb7783e5);
+                        
+                              assign uo_out = FpgaPins_Fpga_ENCRYPT_Check_pass_a0 ? 8'b00111111 :
+                                        8'b01110110;
+                        //_\end_source
+                        `line 210 "top.tlv" 2
+            
+               // Connect Tiny Tapeout outputs. Note that uio_ outputs are not available in the Tiny-Tapeout-3-based FPGA boards.
+               //*uo_out = 8'b0;
+               assign uio_out = 8'b0;
+               assign uio_oe = 8'b0;
             //_\end_source
             `line 341 "/raw.githubusercontent.com/osfpga/VirtualFPGALab/a069f1e4e19adc829b53237b3e0b5d6763dc3194/tlvlib/fpgaincludes.tlv" 2
    
@@ -484,7 +479,7 @@ module my_design (
       // pushbuttons
       
    //_\end_source
-   `line 333 "top.tlv" 2
+   `line 328 "top.tlv" 2
    // Label the switch inputs [0..7] (1..8 on the physical switch panel) (top-to-bottom).
    `line 83 "/raw.githubusercontent.com/osfpga/VirtualFPGALab/35e36bd144fddd75495d4cbc01c4fc50ac5bde6f/tlvlib/tinytapeoutlib.tlv" 1
       for (input_label = 0; input_label <= 7; input_label++) begin : L1_InputLabel //_/input_label
@@ -506,7 +501,7 @@ module my_design (
 
          end
    //_\end_source
-   `line 335 "top.tlv" 2
+   `line 330 "top.tlv" 2
 
 //_\SV
 endmodule
