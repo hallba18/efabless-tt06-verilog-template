@@ -256,9 +256,6 @@ logic [127:0] FpgaPins_Fpga_ENCRYPT_Mixcolumn_block_out_a0;
 // For /fpga_pins/fpga|encrypt/mixcolumn$const_matrix.
 logic [127:0] FpgaPins_Fpga_ENCRYPT_Mixcolumn_const_matrix_a0;
 
-// For /fpga_pins/fpga|encrypt/mixcolumn/xx$out_matrix.
-logic [3:0][31:0] FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_out_matrix_a0;
-
 // For /fpga_pins/fpga|encrypt/mixcolumn/xx/yy$cc.
 logic [7:0] FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_cc_a0 [3:0][3:0];
 
@@ -477,7 +474,7 @@ logic [127:0] FpgaPins_Fpga_ENCRYPT_Subbytes_ssr_out_a0;
                   //
                   for (xx = 0; xx <= 3; xx++) begin : \/xx 
                      (* keep *) logic [31:0] \///?$valid_blk//@0$out_matrix ;
-                     assign \///?$valid_blk//@0$out_matrix = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_out_matrix_a0[xx];
+                     assign \///?$valid_blk//@0$out_matrix = L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[xx].L1_out_matrix_a0;
 
                      //
                      // Scope: /yy[3:0]
@@ -486,7 +483,7 @@ logic [127:0] FpgaPins_Fpga_ENCRYPT_Subbytes_ssr_out_a0;
                         (* keep *) logic [7:0] \///?$valid_blk///@0$cc ;
                         assign \///?$valid_blk///@0$cc = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_cc_a0[xx][yy];
                         (* keep *) logic [7:0] \///?$valid_blk///@0$oo ;
-                        assign \///?$valid_blk///@0$oo = L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[xx].L1_Yy_oo_a0[yy];
+                        assign \///?$valid_blk///@0$oo = L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[xx].L2_Yy[yy].L2_oo_a0;
                         (* keep *) logic [7:0] \///?$valid_blk///@0$ss ;
                         assign \///?$valid_blk///@0$ss = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_ss_a0[xx][yy];
 
@@ -730,10 +727,14 @@ logic [127:0] FpgaPins_Fpga_ENCRYPT_Subbytes_ssr_out_a0;
                               assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_const_matrix_a0[127:0] = 128'h02030101010203010101020303010102; //constant matrix for column multiplicaiton in the form of a vector
                               for (xx = 0; xx <= 3; xx++) begin : L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx //_/xx
 
-                                 // For /yy$oo.
-                                 logic [3:0] [7:0] L1_Yy_oo_a0;
+                                 // For $out_matrix.
+                                 logic [31:0] L1_out_matrix_a0;
 
                                  for (yy = 0; yy <= 3; yy++) begin : L2_Yy //_/yy
+
+                                    // For $oo.
+                                    logic [7:0] L2_oo_a0;
+
                                     assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_ss_a0[xx][yy][7:0] = FpgaPins_Fpga_ENCRYPT_state_ssr_a0[(yy * 8 + xx * 32) + 7 : (yy * 8 + xx * 32)];     //breaks the input vector and
                                     assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_cc_a0[xx][yy][7:0] = FpgaPins_Fpga_ENCRYPT_Mixcolumn_const_matrix_a0[(yy * 32 + xx * 8) + 7 : (yy * 32 + xx * 8)]; //constant matrix into matrices
                                     for (exp = 0; exp <= 3; exp++) begin : L3_Exp //_/exp
@@ -752,12 +753,12 @@ logic [127:0] FpgaPins_Fpga_ENCRYPT_Subbytes_ssr_out_a0;
                                        assign L3_three_check_a0[7:0] = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_cc_a0[exp][yy] == 8'h03 ? FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_ss_a0[xx][exp] : 8'h00; //check if a multiplication by 3 is being done
                                        assign L3_op_a0[7:0] = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_cc_a0[exp][yy] == 8'h01 ? FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_ss_a0[xx][exp] : ((FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_Yy_ss_a0[xx][exp] << 1) ^ L3_three_check_a0 ^ L3_reduce_check_a0); //if 1, identity. otherwise, bitshift & other operations.
                                     end
-                                    assign L1_Yy_oo_a0[yy][7:0] = L3_Exp[0].L3_op_a0 ^ L3_Exp[1].L3_op_a0 ^ L3_Exp[2].L3_op_a0 ^ L3_Exp[3].L3_op_a0; //xor the bytes together
+                                    assign L2_oo_a0[7:0] = L3_Exp[0].L3_op_a0 ^ L3_Exp[1].L3_op_a0 ^ L3_Exp[2].L3_op_a0 ^ L3_Exp[3].L3_op_a0; //xor the bytes together
                                     
                                  end
-                                 assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_out_matrix_a0[xx][31:0] = L1_Yy_oo_a0; //concat matrix rows
+                                 assign L1_out_matrix_a0[31:0] = {L2_Yy[3].L2_oo_a0, L2_Yy[2].L2_oo_a0, L2_Yy[1].L2_oo_a0, L2_Yy[0].L2_oo_a0} ; //concat matrix rows
                               end
-                              assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_block_out_a0[127:0] = FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx_out_matrix_a0; //concat matrix columns
+                              assign FpgaPins_Fpga_ENCRYPT_Mixcolumn_block_out_a0[127:0] = {L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[3].L1_out_matrix_a0, L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[2].L1_out_matrix_a0, L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[1].L1_out_matrix_a0, L1_FpgaPins_Fpga_ENCRYPT_Mixcolumn_Xx[0].L1_out_matrix_a0}; //concat matrix columns
                         //_\end_source
                         assign FpgaPins_Fpga_ENCRYPT_state_mc_a0[127:0] = (FpgaPins_Fpga_ENCRYPT_r_counter_a0 ==0 || FpgaPins_Fpga_ENCRYPT_r_counter_a0 == 10) ? FpgaPins_Fpga_ENCRYPT_state_ssr_a0 : FpgaPins_Fpga_ENCRYPT_Mixcolumn_block_out_a0;
             
